@@ -8,18 +8,19 @@ This project explores a Kaggle Cars dataset with Python, Pandas, NumPy, Matplotl
 
 The notebook's saved outputs show an original dataset of 11,914 rows and 16 columns. The dataset includes make, model, model year, engine horsepower, cylinders, transmission, drive mode, fuel economy, and MSRP.
 
-The notebook expects a file named `Cars_data.csv` in the working directory. In Google Colab, it prompts for a CSV upload when the file is not found. The CSV is not currently committed to this repository, so a fresh run requires you to provide the dataset.
+The notebook first checks `CARS_DATASET_PATH`, then `Cars_data.csv` in the working directory. Google Colab prompts for a CSV upload when neither is available. In local Python and CI, it downloads the public `CooperUnion/cardataset` dataset with KaggleHub and selects the CSV containing the expected columns. The raw CSV is not committed to this repository.
 
 ## Analysis workflow
 
 1. Load and inspect the dataset and its data types.
-2. Remove six columns from the current charting scope: Engine Fuel Type, Market Category, Vehicle Style, Popularity, Number of Doors, and Vehicle Size.
-3. Rename Engine HP to HP, Engine Cylinders to Cylinders, Driven_Wheels to Drive Mode, and MSRP to Price.
-4. Remove duplicate rows.
-5. Remove rows with missing values for this exploratory analysis.
-6. Review numeric distributions and potential outliers.
-7. Compare vehicle counts and prices across selected categories.
-8. Explore horsepower versus price and correlations among numeric variables.
+2. Validate the expected source columns and flag suspicious non-positive values without silently deleting them.
+3. Remove six columns from the current charting scope: Engine Fuel Type, Market Category, Vehicle Style, Popularity, Number of Doors, and Vehicle Size.
+4. Rename Engine HP to HP, Engine Cylinders to Cylinders, Driven_Wheels to Drive Mode, and MSRP to Price.
+5. Remove exact duplicate rows using a tested helper.
+6. Remove rows with missing values for this exploratory analysis.
+7. Review numeric distributions and potential outliers.
+8. Compare vehicle counts and prices across selected categories.
+9. Explore horsepower versus price and correlations among numeric variables.
 
 ## Recorded dataset counts
 
@@ -53,9 +54,9 @@ The revised notebook applies the 1.5 × IQR rule to HP and Price only, then stor
 
 1. Clone or download this repository.
 2. Install the packages in `requirements.txt`.
-3. Place the dataset file `Cars_data.csv` in the notebook's working directory, or upload a CSV when prompted in Google Colab.
-4. Open `Exploratory Data Analysis of Car Dataset.ipynb` in Jupyter or Google Colab.
-5. Run all cells from top to bottom.
+3. Optionally set `CARS_DATASET_PATH` or place `Cars_data.csv` in the working directory. Without a local file, KaggleHub downloads the public dataset in local Python/CI; Google Colab prompts for upload.
+4. Run `python -m pytest -q` to check the reusable data-quality helpers.
+5. Open the notebook in Jupyter or Google Colab and run all cells.
 
 ## Limitations
 
@@ -63,7 +64,7 @@ The revised notebook applies the 1.5 × IQR rule to HP and Price only, then stor
 - Dropping missing rows can introduce bias. A modelling workflow should compare this with imputation fitted on training data only.
 - Removing statistical outliers changes the population being described. Use `df` for the primary EDA and `df2` only for sensitivity comparisons.
 - Correlation does not imply causation. Vehicle make, model, age, and segment can influence observed relationships.
-- The notebook does not train, validate, or deploy a machine-learning model.
+- The notebook does not train, validate, or deploy a machine-learning model. The project includes tested helpers for schema validation, suspicious-value flags, duplicate removal and IQR sensitivity filtering. GitHub Actions installs dependencies, runs unit tests, validates notebook syntax, executes the full notebook and uploads the executed artifact.
 
 ## Project structure
 
@@ -71,6 +72,11 @@ The revised notebook applies the 1.5 × IQR rule to HP and Price only, then stor
 Car---Dataset-----EDA/
 ├── Exploratory Data Analysis of Car Dataset.ipynb
 ├── Cars_data.csv  (provide locally; not committed)
+├── src/
+│   └── car_eda.py
+├── tests/
+│   └── test_car_eda.py
+├── .github/workflows/notebook-validation.yml
 ├── requirements.txt
 └── README.md
 ```
