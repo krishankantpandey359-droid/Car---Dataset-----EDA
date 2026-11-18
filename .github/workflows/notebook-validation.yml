@@ -1,4 +1,4 @@
-name: Notebook validation
+name: Notebook validation and execution
 
 on:
   push:
@@ -8,8 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  validate-notebook:
+  validate-and-execute:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -17,8 +18,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install notebook validator
-        run: python -m pip install --upgrade nbformat
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+      - name: Install project dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
       - name: Validate notebook structure and Python syntax
         run: |
           python - <<'PY'
@@ -53,3 +56,21 @@ jobs:
               raise SystemExit("Notebook contains no code cells.")
           print(f"Notebook valid. Checked {code_cells} code cells.")
           PY
+      - name: Execute complete notebook using the public Cars dataset
+        env:
+          MPLBACKEND: Agg
+        run: |
+          mkdir -p artifacts
+          jupyter nbconvert \
+            --to notebook \
+            --execute "Exploratory Data Analysis of Car Dataset.ipynb" \
+            --output "car-eda-executed.ipynb" \
+            --output-dir artifacts \
+            --ExecutePreprocessor.timeout=600
+      - name: Upload executed notebook
+        uses: actions/upload-artifact@v4
+        with:
+          name: car-eda-executed-notebook
+          path: artifacts/car-eda-executed.ipynb
+          if-no-files-found: error
+          retention-days: 14
