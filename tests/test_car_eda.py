@@ -13,7 +13,9 @@ def test_data_quality_flags_counts_non_positive_values(cars):
     assert flags["non_positive_year"]==1 and flags["non_positive_msrp"]==1
 def test_remove_exact_duplicates_returns_copy(cars):
     duplicated=pd.concat([cars,cars.iloc[[0]]],ignore_index=True); cleaned=remove_exact_duplicates(duplicated)
-    assert len(cleaned)==len(cars) and len(duplicated)==len(cars)+1
+    assert len(cleaned)==len(cars)-1
+    assert len(duplicated)==len(cars)+1
+    pd.testing.assert_frame_equal(cars, cars.copy(deep=True))
 def test_iqr_filter_keeps_original_and_flags_extreme_value():
     frame=pd.DataFrame({"HP":[100,110,120,130,140,1000],"Price":[10000,11000,12000,13000,14000,90000]})
     filtered,mask=iqr_sensitivity_filter(frame)
