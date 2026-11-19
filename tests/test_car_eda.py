@@ -83,4 +83,4 @@ def test_iqr_filter_rejects_invalid_numeric_values():
 def test_iqr_filter_rejects_boolean_and_non_numeric_multiplier(cars, multiplier):
     with pytest.raises(ValueError, match="boolean or non-numeric"):
         iqr_sensitivity_filter(cars, multiplier=multiplier)
-\n
+
