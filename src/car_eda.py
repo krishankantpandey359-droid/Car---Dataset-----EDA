@@ -72,8 +72,8 @@ def iqr_sensitivity_filter(
         raise TypeError("Expected a pandas DataFrame.")
     if frame.empty:
         raise ValueError("Cannot calculate IQR on an empty dataframe.")
-    if not np.isfinite(multiplier) or multiplier <= 0:
-        raise ValueError("IQR multiplier must be a finite positive number.")
+    if isinstance(multiplier, (bool, np.bool_)) or not isinstance(multiplier, (int, float, np.integer, np.floating)) or not np.isfinite(multiplier) or multiplier <= 0:
+        raise ValueError("IQR multiplier must be a finite positive number, not a boolean or non-numeric value.")
     if not columns:
         raise ValueError("At least one IQR column is required.")
     missing = set(columns).difference(frame.columns)
