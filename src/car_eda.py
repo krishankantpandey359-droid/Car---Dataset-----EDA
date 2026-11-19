@@ -8,6 +8,8 @@ QUALITY_COLUMNS = {"Year":"non_positive_year","Engine HP":"non_positive_horsepow
 def validate_cars(frame: pd.DataFrame) -> None:
     if not isinstance(frame,pd.DataFrame): raise TypeError("Expected a pandas DataFrame.")
     if frame.empty: raise ValueError("Cars dataset is empty.")
+    frame.columns = frame.columns.astype(str).str.strip()
+    if frame.columns.duplicated().any(): raise ValueError("Cars dataset contains duplicate column names after trimming whitespace.")
     missing=REQUIRED_COLUMNS.difference(frame.columns)
     if missing: raise ValueError(f"Cars dataset is missing required columns: {sorted(missing)}")
 
@@ -26,11 +28,14 @@ def remove_exact_duplicates(frame: pd.DataFrame) -> pd.DataFrame:
 def iqr_sensitivity_filter(frame: pd.DataFrame, columns: tuple[str,...]=("HP","Price"), multiplier: float=1.5) -> tuple[pd.DataFrame,pd.Series]:
     if not isinstance(frame,pd.DataFrame): raise TypeError("Expected a pandas DataFrame.")
     if frame.empty: raise ValueError("Cannot calculate IQR on an empty dataframe.")
-    if multiplier<=0: raise ValueError("IQR multiplier must be positive.")
+    if not isinstance(multiplier,(int,float)) or isinstance(multiplier,bool) or not pd.notna(multiplier) or multiplier<=0 or multiplier==float("inf"): raise ValueError("IQR multiplier must be a finite positive number.")
     if not columns: raise ValueError("At least one IQR column is required.")
     missing=set(columns).difference(frame.columns)
     if missing: raise ValueError(f"Missing IQR columns: {sorted(missing)}")
     numeric=frame.loc[:,list(columns)].apply(pd.to_numeric,errors="coerce")
+    if numeric.isna().all().any(): raise ValueError("Each IQR column must contain at least one valid numeric value.")
+    if not pd.notna(numeric.to_numpy(dtype=float)).all():
+        numeric = numeric.replace([float("inf"), float("-inf")], pd.NA)
     q1,q3=numeric.quantile(.25),numeric.quantile(.75); spread=q3-q1
     mask=((numeric<q1-multiplier*spread)|(numeric>q3+multiplier*spread)).any(axis=1)
     return frame.loc[~mask].copy(),mask
