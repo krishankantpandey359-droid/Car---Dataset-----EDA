@@ -8,9 +8,9 @@ QUALITY_COLUMNS = {"Year":"non_positive_year","Engine HP":"non_positive_horsepow
 def validate_cars(frame: pd.DataFrame) -> None:
     if not isinstance(frame,pd.DataFrame): raise TypeError("Expected a pandas DataFrame.")
     if frame.empty: raise ValueError("Cars dataset is empty.")
-    frame.columns = frame.columns.astype(str).str.strip()
-    if frame.columns.duplicated().any(): raise ValueError("Cars dataset contains duplicate column names after trimming whitespace.")
-    missing=REQUIRED_COLUMNS.difference(frame.columns)
+    normalized_columns = frame.columns.astype(str).str.strip()
+    if normalized_columns.duplicated().any(): raise ValueError("Cars dataset contains duplicate column names after trimming whitespace.")
+    missing=REQUIRED_COLUMNS.difference(normalized_columns)
     if missing: raise ValueError(f"Cars dataset is missing required columns: {sorted(missing)}")
 
 def data_quality_flags(frame: pd.DataFrame) -> pd.Series:
