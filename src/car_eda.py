@@ -21,6 +21,9 @@ def validate_cars(frame: pd.DataFrame) -> None:
         raise TypeError("Expected a pandas DataFrame.")
     if frame.empty:
         raise ValueError("Cars dataset is empty.")
+    if frame.columns.has_duplicates:
+        duplicates = frame.columns[frame.columns.duplicated()].unique().tolist()
+        raise ValueError(f"Cars dataset contains duplicate column names: {duplicates}")
     missing = REQUIRED_COLUMNS.difference(frame.columns)
     if missing:
         raise ValueError(f"Cars dataset is missing required columns: {sorted(missing)}")
