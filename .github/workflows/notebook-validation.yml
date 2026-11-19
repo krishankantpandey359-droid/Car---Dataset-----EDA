@@ -1,0 +1,78 @@
+name: Notebook validation and execution
+
+on:
+  push:
+    branches: [main, "audit/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate-and-execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+      - name: Install project dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+      - name: Run data-quality unit tests
+        run: python -m pip install pytest && python -m pytest -q
+      - name: Validate notebook structure and Python syntax
+        run: |
+          python - <<'PY'
+          import ast
+          import nbformat
+          from pathlib import Path
+
+          path = Path("Exploratory Data Analysis of Car Dataset.ipynb")
+          notebook = nbformat.read(path, as_version=4)
+          nbformat.validate(notebook)
+
+          code_cells = 0
+          for index, cell in enumerate(notebook.cells):
+              if cell.cell_type != "code":
+                  continue
+              code_cells += 1
+              source_lines = [
+                  line for line in cell.source.splitlines()
+                  if not line.lstrip().startswith("%")
+                  and not line.lstrip().startswith("!")
+              ]
+              source = "\n".join(source_lines)
+              if source.strip():
+                  try:
+                      ast.parse(source)
+                  except SyntaxError as exc:
+                      raise SystemExit(
+                          f"Syntax error in notebook cell {index}: {exc}"
+                      ) from exc
+
+          if code_cells == 0:
+              raise SystemExit("Notebook contains no code cells.")
+          print(f"Notebook valid. Checked {code_cells} code cells.")
+          PY
+      - name: Execute complete notebook using the public Cars dataset
+        env:
+          MPLBACKEND: Agg
+        run: |
+          mkdir -p artifacts
+          jupyter nbconvert \
+            --to notebook \
+            --execute "Exploratory Data Analysis of Car Dataset.ipynb" \
+            --output "car-eda-executed.ipynb" \
+            --output-dir artifacts \
+            --ExecutePreprocessor.timeout=600
+      - name: Upload executed notebook
+        uses: actions/upload-artifact@v4
+        with:
+          name: car-eda-executed-notebook
+          path: artifacts/car-eda-executed.ipynb
+          if-no-files-found: error
+          retention-days: 14
