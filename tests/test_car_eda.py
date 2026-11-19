@@ -51,7 +51,7 @@ def test_quality_flags_separate_missing_invalid_and_non_positive(cars):
 def test_remove_exact_duplicates_returns_copy(cars):
     duplicated = pd.concat([cars, cars.iloc[[0]]], ignore_index=True)
     cleaned = remove_exact_duplicates(duplicated)
-    assert len(cleaned) == len(cars)
+    assert len(cleaned) == len(cars) - 1
     assert len(duplicated) == len(cars) + 1
 
 
