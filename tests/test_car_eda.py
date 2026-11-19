@@ -38,6 +38,7 @@ def test_validate_cars_rejects_empty_data(cars):
 def test_quality_flags_separate_missing_invalid_and_non_positive(cars):
     cars.loc[0, "Year"] = 0
     cars.loc[1, "MSRP"] = -10
+    cars["Engine HP"] = cars["Engine HP"].astype(object)
     cars.loc[2, "Engine HP"] = "not recorded"
     cars.loc[3, "highway MPG"] = np.nan
     flags = data_quality_flags(cars)
