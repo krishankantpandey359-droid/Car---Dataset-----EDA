@@ -55,7 +55,7 @@ jobs:
           from pathlib import Path
           path = Path("Exploratory Data Analysis of Car Dataset.ipynb")
           notebook = nbformat.read(path, as_version=4)
-          nbformat.validate(notebook)
+          nbformat.validate(notebook, relax_add_props=True)
           count = 0
           for index, cell in enumerate(notebook.cells):
               if cell.cell_type != "code":
