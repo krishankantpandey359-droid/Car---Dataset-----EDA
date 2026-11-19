@@ -78,3 +78,9 @@ def test_iqr_filter_rejects_invalid_numeric_values():
     frame = pd.DataFrame({"HP": [100, 110, np.nan], "Price": [10000, 11000, 12000]})
     with pytest.raises(ValueError, match="finite numeric"):
         iqr_sensitivity_filter(frame)
+
+@pytest.mark.parametrize("multiplier", [True, False, "1.5", None])
+def test_iqr_filter_rejects_boolean_and_non_numeric_multiplier(cars, multiplier):
+    with pytest.raises(ValueError, match="boolean or non-numeric"):
+        iqr_sensitivity_filter(cars, multiplier=multiplier)
+\n
