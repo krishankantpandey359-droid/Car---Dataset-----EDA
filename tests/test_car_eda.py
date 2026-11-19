@@ -84,3 +84,16 @@ def test_iqr_filter_rejects_boolean_and_non_numeric_multiplier(cars, multiplier)
     with pytest.raises(ValueError, match="boolean or non-numeric"):
         iqr_sensitivity_filter(cars, multiplier=multiplier)
 
+
+
+
+def test_validate_cars_rejects_duplicate_column_names(cars):
+    cars.columns = list(cars.columns[:-1]) + ["Make"]
+    with pytest.raises(ValueError, match="duplicate column names"):
+        validate_cars(cars)
+
+
+def test_data_quality_flags_do_not_mutate_input(cars):
+    original = cars.copy(deep=True)
+    data_quality_flags(cars)
+    pd.testing.assert_frame_equal(cars, original)
