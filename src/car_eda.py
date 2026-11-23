@@ -43,9 +43,11 @@ def data_quality_flags(frame: pd.DataFrame) -> pd.DataFrame:
             continue
         raw = frame[column]
         numeric = pd.to_numeric(raw, errors="coerce")
-        finite = pd.Series(np.isfinite(numeric.to_numpy(dtype=float, na_value=np.nan)),
-                           index=frame.index)
-        invalid = numeric.isna() | ~finite
+        finite = pd.Series(
+            np.isfinite(numeric.to_numpy(dtype=float, na_value=np.nan)),
+            index=frame.index,
+        )
+        invalid = ~raw.isna() & (numeric.isna() | ~finite)
         records.append({
             "column": column,
             "missing_values": int(raw.isna().sum()),
@@ -75,8 +77,18 @@ def iqr_sensitivity_filter(
         raise TypeError("Expected a pandas DataFrame.")
     if frame.empty:
         raise ValueError("Cannot calculate IQR on an empty dataframe.")
-    if isinstance(multiplier, (bool, np.bool_)) or not isinstance(multiplier, (int, float, np.integer, np.floating)) or not np.isfinite(multiplier) or multiplier <= 0:
-        raise ValueError("IQR multiplier must be a finite positive number, not a boolean or non-numeric value.")
+    valid_multiplier_type = isinstance(
+        multiplier, (int, float, np.integer, np.floating)
+    ) and not isinstance(multiplier, (bool, np.bool_))
+    if (
+        not valid_multiplier_type
+        or not np.isfinite(multiplier)
+        or multiplier <= 0
+    ):
+        raise ValueError(
+            "IQR multiplier must be a finite positive number, "
+            "not a boolean or non-numeric value."
+        )
     if not columns:
         raise ValueError("At least one IQR column is required.")
     missing = set(columns).difference(frame.columns)
@@ -87,6 +99,8 @@ def iqr_sensitivity_filter(
         raise ValueError("IQR columns must contain only finite numeric values.")
     q1, q3 = numeric.quantile(.25), numeric.quantile(.75)
     spread = q3 - q1
-    mask = ((numeric < q1 - multiplier * spread) |
-            (numeric > q3 + multiplier * spread)).any(axis=1)
+    mask = (
+        (numeric < q1 - multiplier * spread)
+        | (numeric > q3 + multiplier * spread)
+    ).any(axis=1)
     return frame.loc[~mask].copy(), mask
