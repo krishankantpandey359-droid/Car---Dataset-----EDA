@@ -97,3 +97,18 @@ def test_data_quality_flags_do_not_mutate_input(cars):
     original = cars.copy(deep=True)
     data_quality_flags(cars)
     pd.testing.assert_frame_equal(cars, original)
+
+
+def test_data_quality_flags_separate_missing_from_invalid(cars):
+    cars["Engine HP"] = cars["Engine HP"].astype(object)
+    cars.loc[0, "Engine HP"] = None
+    cars.loc[1, "Engine HP"] = "not recorded"
+    flags = data_quality_flags(cars)
+    assert flags.loc["Engine HP", "missing_values"] == 1
+    assert flags.loc["Engine HP", "non_numeric_or_non_finite"] == 1
+
+
+def test_iqr_filter_rejects_infinite_values():
+    frame = pd.DataFrame({"HP": [100, 110, float("inf")], "Price": [10000, 11000, 12000]})
+    with pytest.raises(ValueError, match="finite numeric"):
+        iqr_sensitivity_filter(frame)
